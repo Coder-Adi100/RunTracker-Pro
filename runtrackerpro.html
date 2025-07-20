@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RunTracker Pro</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            overflow-x: hidden;
+            min-height: 100vh;
+        }
+        
+        .app-container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            animation: fadeInDown 0.8s ease-out;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            background: rgba(255,255,255,0.2);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.3);
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+            animation: fadeInUp 0.8s ease-out 0.2s both;
+        }
+        
+        .metric-card {
+            background: rgba(255,255,255,0.15);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 20px;
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .metric-card:hover {
+            transform: translateY(-2px);
+            background: rgba(255,255,255,0.2);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        
+        .metric-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            transition: left 0.5s ease;
+        }
+        
+        .metric-card:hover::before {
+            left: 100%;
+        }
+        
+        .metric-value {
+            font-size: 2.2rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: #fff;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        
+        .metric-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 30px;
+            animation: fadeInUp 0.8s ease-out 0.4s both;
+        }
+        
+        .btn {
+            padding: 15px 25px;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s ease, height 0.3s ease;
+        }
+        
+        .btn:active::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn-start {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .btn-start:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(76, 175, 80, 0.3);
+        }
+        
+        .btn-stop {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .btn-stop:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(244, 67, 54, 0.3);
+        }
+        
+        .btn-reset {
+            background: linear-gradient(45deg, #ff9800, #f57c00);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .btn-reset:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(255, 152, 0, 0.3);
+        }
+        
+        .stats {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255,255,255,0.2);
+            animation: fadeInUp 0.8s ease-out 0.6s both;
+        }
+        
+        .stats h3 {
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+            margin-top: 5px;
+        }
+        
+        .permission-banner {
+            background: rgba(255, 193, 7, 0.9);
+            color: #000;
+            padding: 15px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+            text-align: center;
+            display: none;
+            animation: slideInDown 0.5s ease-out;
+        }
+        
+        .permission-banner button {
+            background: #fff;
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 20px;
+            margin-top: 10px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-100px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        
+        .recording {
+            animation: pulse 2s infinite;
+        }
+        
+        .gps-status {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #ff4444;
+            transition: background 0.3s ease;
+        }
+        
+        .gps-status.active {
+            background: #44ff44;
+        }
+        
+        .error-toast {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(244, 67, 54, 0.95);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            max-width: 300px;
+            text-align: center;
+            z-index: 1000;
+            animation: fadeInScale 0.3s ease-out;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: translate(-50%, -50%) scale(0.8);
+            }
+            to {
+                opacity: 1;
+                transform: translate(-50%, -50%) scale(1);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="permission-banner" id="permissionBanner">
+            <strong>Location & Motion Access Needed</strong><br>
+            This app needs access to your location and device sensors to track your run.
+            <button onclick="requestPermissions()">Grant Permissions</button>
+        </div>
+        
+        <div class="header">
+            <h1>🏃 RunTracker Pro</h1>
+            <div class="status-indicator" id="status">Ready to Run</div>
+            <div class="gps-status" id="gpsStatus"></div>
+        </div>
+        
+        <div class="metrics-grid">
+            <div class="metric-card">
+                <div class="metric-value" id="speed">0.0</div>
+                <div class="metric-label">Speed (km/h)</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="distance">0.00</div>
+                <div class="metric-label">Distance (km)</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="steps">0</div>
+                <div class="metric-label">Steps</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value" id="cadence">0</div>
+                <div class="metric-label">Cadence (SPM)</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <button class="btn btn-start" id="startBtn" onclick="startTracking()">Start</button>
+            <button class="btn btn-stop" id="stopBtn" onclick="stopTracking()" style="display: none;">Stop</button>
+            <button class="btn btn-reset" onclick="resetTracking()">Reset</button>
+        </div>
+        
+        <div class="stats">
+            <h3>📊 Session Stats</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <div class="stat-value" id="duration">00:00:00</div>
+                    <div class="stat-label">Duration</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="avgSpeed">0.0</div>
+                    <div class="stat-label">Avg Speed (km/h)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="maxSpeed">0.0</div>
+                    <div class="stat-label">Max Speed (km/h)</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="calories">0</div>
+                    <div class="stat-label">Calories (est)</div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 20px; text-align: center;">
+                <button class="btn" style="background: rgba(255,255,255,0.1); color: white; font-size: 0.9rem; padding: 10px 20px;" onclick="runDiagnostics()">
+                    🔧 Run GPS Diagnostics
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // App state
+        let isTracking = false;
+        let startTime = null;
+        let lastPosition = null;
+        let totalDistance = 0;
+        let stepCount = 0;
+        let speeds = [];
+        let lastStepTime = 0;
+        let stepTimes = [];
+        let watchId = null;
+        let timerInterval = null;
+        let stepDetectionSensitivity = 1.2;
+        let lastAcceleration = { x: 0, y: 0, z: 0 };
+        
+        // DOM elements
+        const elements = {
+            speed: document.getElementById('speed'),
+            distance: document.getElementById('distance'),
+            steps: document.getElementById('steps'),
+            cadence: document.getElementById('cadence'),
+            duration: document.getElementById('duration'),
+            avgSpeed: document.getElementById('avgSpeed'),
+            maxSpeed: document.getElementById('maxSpeed'),
+            calories: document.getElementById('calories'),
+            status: document.getElementById('status'),
+            gpsStatus: document.getElementById('gpsStatus'),
+            startBtn: document.getElementById('startBtn'),
+            stopBtn: document.getElementById('stopBtn'),
+            permissionBanner: document.getElementById('permissionBanner')
+        };
+        
+        // Check for required APIs on load
+        window.addEventListener('load', function() {
+            checkSystemCapabilities();
+            
+            // Show permission banner if needed
+            if (navigator.permissions) {
+                navigator.permissions.query({name: 'geolocation'}).then(result => {
+                    if (result.state === 'prompt') {
+                        elements.permissionBanner.style.display = 'block';
+                    }
+                });
+            } else {
+                elements.permissionBanner.style.display = 'block';
+            }
+        });
+        
+        function checkSystemCapabilities() {
+            let diagnostics = [];
+            
+            // Check geolocation support
+            if (!navigator.geolocation) {
+                diagnostics.push('❌ Geolocation not supported');
+                elements.status.textContent = 'GPS not supported on this device';
+                return;
+            } else {
+                diagnostics.push('✅ Geolocation supported');
+            }
+            
+            // Check HTTPS requirement
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+                diagnostics.push('⚠️ HTTPS required for location access');
+                showErrorToast('Location requires HTTPS connection. Try accessing via https:// or localhost');
+            } else {
+                diagnostics.push('✅ Secure connection');
+            }
+            
+            // Check device motion support
+            if (!window.DeviceMotionEvent) {
+                diagnostics.push('⚠️ Device motion not supported - step counting unavailable');
+            } else {
+                diagnostics.push('✅ Device motion supported');
+            }
+            
+            // Check user agent for known issues
+            const userAgent = navigator.userAgent.toLowerCase();
+            if (userAgent.includes('firefox') && userAgent.includes('mobile')) {
+                diagnostics.push('⚠️ Firefox Mobile has GPS limitations');
+            }
+            
+            console.log('System Diagnostics:');
+            diagnostics.forEach(diag => console.log(diag));
+            
+            // Show basic diagnostic info
+            elements.status.textContent = 'System check complete - Ready to test GPS';
+        }
+        
+        async function requestPermissions() {
+            elements.status.textContent = 'Testing GPS...';
+            
+            try {
+                // Test with basic GPS request first
+                console.log('Attempting GPS test...');
+                const position = await new Promise((resolve, reject) => {
+                    navigator.geolocation.getCurrentPosition(resolve, reject, {
+                        enableHighAccuracy: false, // Start with low accuracy for faster response
+                        timeout: 15000,
+                        maximumAge: 300000 // 5 minutes
+                    });
+                });
+                
+                console.log('GPS test successful:', position);
+                elements.permissionBanner.style.display = 'none';
+                elements.status.textContent = 'GPS Working! Ready to Run';
+                elements.gpsStatus.classList.add('active');
+                
+                showErrorToast(`✅ GPS Test Successful!\nLatitude: ${position.coords.latitude.toFixed(4)}\nLongitude: ${position.coords.longitude.toFixed(4)}\nAccuracy: ${position.coords.accuracy}m`);
+                
+                // Request device motion permission (iOS 13+)
+                if (typeof DeviceMotionEvent.requestPermission === 'function') {
+                    const permission = await DeviceMotionEvent.requestPermission();
+                    if (permission !== 'granted') {
+                        console.warn('Motion permission denied');
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Detailed GPS error:', error);
+                elements.status.textContent = `GPS Test Failed (Error ${error.code})`;
+                
+                let troubleshootMsg = 'GPS Test Failed. ';
+                
+                switch(error.code) {
+                    case 1: // PERMISSION_DENIED
+                        troubleshootMsg += 'Try:\n• Refresh page and allow location\n• Check browser settings\n• Try different browser';
+                        break;
+                    case 2: // POSITION_UNAVAILABLE
+                        troubleshootMsg += 'Try:\n• Go outside\n• Wait longer for GPS signal\n• Restart location services\n• Try on different device';
+                        break;
+                    case 3: // TIMEOUT
+                        troubleshootMsg += 'Try:\n• Move to open area\n• Wait longer\n• Check GPS is enabled on device';
+                        break;
+                    default:
+                        troubleshootMsg += 'Unknown error. Try different browser or device.';
+                }
+                
+                showErrorToast(troubleshootMsg);
+            }
+        }
+        
+        function startTracking() {
+            if (isTracking) return;
+            
+            isTracking = true;
+            startTime = Date.now();
+            lastPosition = null;
+            
+            elements.startBtn.style.display = 'none';
+            elements.stopBtn.style.display = 'inline-block';
+            elements.status.textContent = 'Searching for GPS...';
+            document.querySelector('.header').classList.add('recording');
+            
+            // Start GPS tracking
+            startGPSTracking();
+            
+            // Start step detection
+            if (window.DeviceMotionEvent) {
+                window.addEventListener('devicemotion', detectStep);
+            }
+            
+            // Start timer
+            timerInterval = setInterval(updateTimer, 1000);
+            
+            console.log('Tracking started');
+        }
+        
+        function startGPSTracking() {
+            watchId = navigator.geolocation.watchPosition(
+                updatePosition,
+                handleLocationError,
+                {
+                    enableHighAccuracy: true,
+                    timeout: 15000, // Increased timeout
+                    maximumAge: 5000 // Allow slightly older positions
+                }
+            );
+        }
+        
+        function stopTracking() {
+            if (!isTracking) return;
+            
+            isTracking = false;
+            
+            elements.startBtn.style.display = 'inline-block';
+            elements.stopBtn.style.display = 'none';
+            elements.status.textContent = 'Run Completed';
+            document.querySelector('.header').classList.remove('recording');
+            
+            // Stop GPS tracking
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+                watchId = null;
+            }
+            
+            // Stop step detection
+            window.removeEventListener('devicemotion', detectStep);
+            
+            // Stop timer
+            clearInterval(timerInterval);
+            
+            console.log('Tracking stopped');
+        }
+        
+        function resetTracking() {
+            stopTracking();
+            
+            // Reset all values
+            totalDistance = 0;
+            stepCount = 0;
+            speeds = [];
+            stepTimes = [];
+            startTime = null;
+            lastPosition = null;
+            
+            // Update display
+            elements.speed.textContent = '0.0';
+            elements.distance.textContent = '0.00';
+            elements.steps.textContent = '0';
+            elements.cadence.textContent = '0';
+            elements.duration.textContent = '00:00:00';
+            elements.avgSpeed.textContent = '0.0';
+            elements.maxSpeed.textContent = '0.0';
+            elements.calories.textContent = '0';
+            elements.status.textContent = 'Ready to Run';
+            
+            console.log('Tracking reset');
+        }
+        
+        function updatePosition(position) {
+            elements.gpsStatus.classList.add('active');
+            elements.status.textContent = 'Tracking...';
+            
+            if (!isTracking) return;
+            
+            const currentPos = {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+                timestamp: position.timestamp,
+                accuracy: position.coords.accuracy
+            };
+            
+            // Filter out very inaccurate positions (over 100m accuracy)
+            if (currentPos.accuracy > 100) {
+                console.log('Low accuracy GPS reading, skipping:', currentPos.accuracy + 'm');
+                return;
+            }
+            
+            if (lastPosition) {
+                const distance = calculateDistance(lastPosition, currentPos);
+                const timeDiff = (currentPos.timestamp - lastPosition.timestamp) / 1000; // seconds
+                
+                if (distance > 0.001 && timeDiff > 0) { // Filter out noise
+                    totalDistance += distance;
+                    const currentSpeed = (distance / timeDiff) * 3.6; // Convert m/s to km/h
+                    
+                    // Filter unrealistic speeds (over 50 km/h)
+                    if (currentSpeed <= 50) {
+                        speeds.push(currentSpeed);
+                        elements.speed.textContent = currentSpeed.toFixed(1);
+                    }
+                    
+                    elements.distance.textContent = totalDistance.toFixed(2);
+                    updateStats();
+                }
+            }
+            
+            lastPosition = currentPos;
+            console.log('GPS Update - Accuracy:', currentPos.accuracy + 'm');
+        }
+        
+        function handleLocationError(error) {
+            elements.gpsStatus.classList.remove('active');
+            console.error('Location error:', error);
+            
+            let errorMessage = '';
+            let fixMessage = '';
+            
+            switch(error.code) {
+                case error.PERMISSION_DENIED:
+                    errorMessage = 'Location access denied';
+                    fixMessage = 'Go to Settings > Privacy > Location Services and enable location for this app';
+                    break;
+                case error.POSITION_UNAVAILABLE:
+                    errorMessage = 'GPS signal not found';
+                    fixMessage = 'Make sure you\'re outdoors with clear sky view. GPS may not work indoors.';
+                    break;
+                case error.TIMEOUT:
+                    errorMessage = 'GPS timeout - retrying...';
+                    fixMessage = 'Poor GPS signal. Try moving to an open area.';
+                    // Auto retry after timeout
+                    setTimeout(() => {
+                        if (isTracking) {
+                            startGPSTracking();
+                        }
+                    }, 5000);
+                    break;
+                default:
+                    errorMessage = `GPS Error (${error.code})`;
+                    fixMessage = 'Unknown GPS error. Try restarting the app.';
+                    break;
+            }
+            
+            elements.status.textContent = errorMessage;
+            
+            // Show detailed error message
+            showErrorToast(errorMessage + '. ' + fixMessage);
+        }
+        
+        function detectStep(event) {
+            if (!isTracking) return;
+            
+            const acceleration = event.accelerationIncludingGravity;
+            if (!acceleration) return;
+            
+            // Calculate total acceleration magnitude
+            const totalAccel = Math.sqrt(
+                Math.pow(acceleration.x, 2) + 
+                Math.pow(acceleration.y, 2) + 
+                Math.pow(acceleration.z, 2)
+            );
+            
+            // Calculate the change in acceleration
+            const lastTotal = Math.sqrt(
+                Math.pow(lastAcceleration.x, 2) + 
+                Math.pow(lastAcceleration.y, 2) + 
+                Math.pow(lastAcceleration.z, 2)
+            );
+            
+            const accelChange = Math.abs(totalAccel - lastTotal);
+            
+            // Detect step if acceleration change is significant
+            if (accelChange > stepDetectionSensitivity) {
+                const currentTime = Date.now();
+                
+                // Prevent double counting (minimum 200ms between steps)
+                if (currentTime - lastStepTime > 200) {
+                    stepCount++;
+                    stepTimes.push(currentTime);
+                    lastStepTime = currentTime;
+                    
+                    elements.steps.textContent = stepCount;
+                    updateCadence();
+                }
+            }
+            
+            lastAcceleration = acceleration;
+        }
+        
+        function updateCadence() {
+            const now = Date.now();
+            const oneMinuteAgo = now - 60000;
+            
+            // Count steps in the last minute
+            const recentSteps = stepTimes.filter(time => time > oneMinuteAgo);
+            const cadence = recentSteps.length;
+            
+            elements.cadence.textContent = cadence;
+        }
+        
+        function updateTimer() {
+            if (!startTime) return;
+            
+            const elapsed = Date.now() - startTime;
+            const hours = Math.floor(elapsed / 3600000);
+            const minutes = Math.floor((elapsed % 3600000) / 60000);
+            const seconds = Math.floor((elapsed % 60000) / 1000);
+            
+            elements.duration.textContent = 
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+        
+        function updateStats() {
+            if (speeds.length === 0) return;
+            
+            // Average speed
+            const avgSpeed = speeds.reduce((a, b) => a + b, 0) / speeds.length;
+            elements.avgSpeed.textContent = avgSpeed.toFixed(1);
+            
+            // Max speed
+            const maxSpeed = Math.max(...speeds);
+            elements.maxSpeed.textContent = maxSpeed.toFixed(1);
+            
+            // Estimated calories (rough calculation: 0.75 calories per kg per km)
+            // Using average weight of 70kg
+            const calories = Math.round(totalDistance * 0.75 * 70);
+            elements.calories.textContent = calories;
+        }
+        
+        // Calculate distance between two GPS coordinates (Haversine formula)
+        function calculateDistance(pos1, pos2) {
+            const R = 6371000; // Earth's radius in meters
+            const lat1Rad = pos1.lat * Math.PI / 180;
+            const lat2Rad = pos2.lat * Math.PI / 180;
+            const deltaLatRad = (pos2.lat - pos1.lat) * Math.PI / 180;
+            const deltaLngRad = (pos2.lng - pos1.lng) * Math.PI / 180;
+            
+            const a = Math.sin(deltaLatRad / 2) * Math.sin(deltaLatRad / 2) +
+                    Math.cos(lat1Rad) * Math.cos(lat2Rad) *
+                    Math.sin(deltaLngRad / 2) * Math.sin(deltaLngRad / 2);
+            
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            
+            return R * c / 1000; // Convert to kilometers
+        }
+        
+        // Handle page visibility changes (pause when app goes to background)
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden && isTracking) {
+                console.log('App backgrounded - tracking continues');
+            } else if (!document.hidden && isTracking) {
+                console.log('App foregrounded - tracking active');
+            }
+        });
+        
+        // Show error toast message
+        function showErrorToast(message) {
+            // Remove existing toasts
+            const existingToasts = document.querySelectorAll('.error-toast');
+            existingToasts.forEach(toast => toast.remove());
+            
+            // Create new toast
+            const toast = document.createElement('div');
+            toast.className = 'error-toast';
+            toast.innerHTML = message.replace(/\n/g, '<br>');
+            document.body.appendChild(toast);
+            
+            // Auto remove after 8 seconds (longer for diagnostic messages)
+            setTimeout(() => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            }, 8000);
+            
+            // Click to dismiss
+            toast.addEventListener('click', () => {
+                if (toast.parentNode) {
+                    toast.parentNode.removeChild(toast);
+                }
+            });
+        }
+        
+        // Comprehensive GPS diagnostic function
+        function runDiagnostics() {
+            elements.status.textContent = 'Running diagnostics...';
+            
+            let diagnosticResults = ['🔧 GPS DIAGNOSTICS REPORT\n'];
+            
+            // Check basic support
+            diagnosticResults.push(`Browser: ${navigator.userAgent.slice(0, 50)}...`);
+            diagnosticResults.push(`Protocol: ${location.protocol}`);
+            diagnosticResults.push(`Host: ${location.hostname}`);
+            
+            if (navigator.geolocation) {
+                diagnosticResults.push('✅ Geolocation API supported');
+                
+                // Test different GPS configurations
+                testGPSConfiguration('High Accuracy', {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                });
+                
+            } else {
+                diagnosticResults.push('❌ Geolocation not supported');
+                showErrorToast(diagnosticResults.join('\n'));
+                return;
+            }
+            
+            showErrorToast(diagnosticResults.join('\n'));
+        }
+        
+        function testGPSConfiguration(name, options) {
+            console.log(`Testing GPS config: ${name}`);
+            
+            const startTime = Date.now();
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const duration = Date.now() - startTime;
+                    console.log(`✅ ${name} - Success in ${duration}ms`);
+                    console.log(`Accuracy: ${position.coords.accuracy}m`);
+                    console.log(`Coordinates: ${position.coords.latitude}, ${position.coords.longitude}`);
+                    
+                    if (position.coords.accuracy < 50) {
+                        elements.status.textContent = `GPS Working! (${name})`;
+                        elements.gpsStatus.classList.add('active');
+                    }
+                },
+                (error) => {
+                    const duration = Date.now() - startTime;
+                    console.log(`❌ ${name} - Failed in ${duration}ms - Error ${error.code}: ${error.message}`);
+                },
+                options
+            );
+        }
+    </script>
+</body>
+</html>
